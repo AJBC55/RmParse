@@ -49,17 +49,33 @@ func parseDuration(hhmmss []byte) (time.Duration, error) {
 
 // fucntion to turn the rmmoniter time format into a golang time
 func parseTimeWithCurrentDate(hhmmss []byte) (time.Time, error) {
-	// Get the current date
-	hhmmss = bytes.Trim(hhmmss, `"`)
+	// Remove any enclosing quotes and extra spaces
+	hhmmss = bytes.TrimSpace(bytes.Trim(hhmmss, `"`))
+
+	if len(hhmmss) == 0 {
+		return time.Time{}, fmt.Errorf("empty time input")
+	}
+
 	currentDate := time.Now().Format("2006-01-02")
 	// Combine the current date with the provided time
 	fullTimeStr := currentDate + " " + string(hhmmss)
-	// Define the layout corresponding to the full date-time string
-	layout := "2006-01-02 15:04:05"
-	// Parse the combined date-time string to a time.Time object
-	parsedTime, err := time.Parse(layout, fullTimeStr)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid time format: %v", err)
+
+	// Define the layouts corresponding to the possible time formats
+	layouts := []string{
+		"2006-01-02 15:04:05", // full time with seconds
+		"2006-01-02 15:04",    // time without seconds
 	}
-	return parsedTime, nil
+
+	// Try parsing the time with each layout
+	var parsedTime time.Time
+	var err error
+	for _, layout := range layouts {
+		parsedTime, err = time.Parse(layout, fullTimeStr)
+		if err == nil {
+			return parsedTime, nil // return the first successful parse
+		}
+	}
+
+	// If none of the layouts match, return the error
+	return time.Time{}, fmt.Errorf("invalid time format '%s': %v", string(hhmmss), err)
 }
