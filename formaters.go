@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -56,26 +57,31 @@ func parseTimeWithCurrentDate(hhmmss []byte) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("empty time input")
 	}
 
+	// Split the time string by colon
+	timeParts := strings.Split(string(hhmmss), ":")
+	if len(timeParts) < 2 || len(timeParts) > 3 {
+		return time.Time{}, fmt.Errorf("invalid time format, expected HH:mm or HH:mm:ss but got '%s'", string(hhmmss))
+	}
+
+	// If seconds part is missing, add "00"
+	if len(timeParts) == 2 {
+		hhmmss = []byte(string(hhmmss) + ":00")
+	} else if len(timeParts[2]) == 1 { // If the seconds part is a single digit, pad it with a leading zero
+		hhmmss = []byte(fmt.Sprintf("%s:%s:%02s", timeParts[0], timeParts[1], timeParts[2]))
+	}
+
 	currentDate := time.Now().Format("2006-01-02")
 	// Combine the current date with the provided time
 	fullTimeStr := currentDate + " " + string(hhmmss)
 
-	// Define the layouts corresponding to the possible time formats
-	layouts := []string{
-		"2006-01-02 15:04:05", // full time with seconds
-		"2006-01-02 15:04",    // time without seconds
+	// Define the layout corresponding to the full date-time string
+	layout := "2006-01-02 15:04:05"
+
+	// Parse the combined date-time string to a time.Time object
+	parsedTime, err := time.Parse(layout, fullTimeStr)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid time format '%s': %v", string(hhmmss), err)
 	}
 
-	// Try parsing the time with each layout
-	var parsedTime time.Time
-	var err error
-	for _, layout := range layouts {
-		parsedTime, err = time.Parse(layout, fullTimeStr)
-		if err == nil {
-			return parsedTime, nil // return the first successful parse
-		}
-	}
-
-	// If none of the layouts match, return the error
-	return time.Time{}, fmt.Errorf("invalid time format '%s': %v", string(hhmmss), err)
+	return parsedTime, nil
 }
