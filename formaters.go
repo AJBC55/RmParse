@@ -53,8 +53,9 @@ func parseTimeWithCurrentDate(hhmmss []byte) (time.Time, error) {
 	// Remove any enclosing quotes and extra spaces
 	hhmmss = bytes.TrimSpace(bytes.Trim(hhmmss, `"`))
 
-	if len(hhmmss) == 0 {
-		return time.Time{}, fmt.Errorf("empty time input")
+	// Check if the input format includes unexpected values like dates or text
+	if !strings.Contains(string(hhmmss), ":") {
+		return time.Time{}, fmt.Errorf("invalid time format, expected HH:mm or HH:mm:ss but got '%s'", string(hhmmss))
 	}
 
 	// Split the time string by colon
