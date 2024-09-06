@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+// interface for the RmMessage
+type RmMessage interface {
+	RmParse([][]byte) error
+}
+
 // struct for the ClassInfo
 type ClassInfo struct {
 	UniqueNumber int    `json:"uniqueNumber"`
@@ -14,12 +19,12 @@ type ClassInfo struct {
 
 // method for rm parse
 func (ci *ClassInfo) RmParse(ln [][]byte) error {
-	un, err := strconv.Atoi(string(ln[0]))
+	un, err := strconv.Atoi(string(ln[1]))
 	if err != nil {
 		return err
 	}
 	ci.UniqueNumber = un
-	ci.Description = string(bytes.Trim(ln[1], `"`))
+	ci.Description = string(bytes.Trim(ln[2], `"`))
 	return nil
 }
 
@@ -35,16 +40,16 @@ type CompInfo struct {
 
 // rm parse Method
 func (cmp *CompInfo) RmParse(ln [][]byte) error {
-	cmp.RegistrationNumber = string(bytes.Trim(ln[0], `"`))
-	cmp.Number = string(bytes.Trim(ln[1], `"`))
-	cn, err := strconv.Atoi(string(ln[2]))
+	cmp.RegistrationNumber = string(bytes.Trim(ln[1], `"`))
+	cmp.Number = string(bytes.Trim(ln[2], `"`))
+	cn, err := strconv.Atoi(string(ln[3]))
 	if err != nil {
 		return err
 	}
 	cmp.ClassNumber = cn
-	cmp.FirstName = string(bytes.Trim(ln[3], `"`))
-	cmp.LastName = string(bytes.Trim(ln[4], `"`))
-	cmp.Nationality = string(bytes.Trim(ln[5], `"`))
+	cmp.FirstName = string(bytes.Trim(ln[4], `"`))
+	cmp.LastName = string(bytes.Trim(ln[5], `"`))
+	cmp.Nationality = string(bytes.Trim(ln[6], `"`))
 	return nil
 }
 
@@ -61,17 +66,17 @@ type CompetitorInfo struct {
 
 // rm Parse Function
 func (ci *CompetitorInfo) RmParse(fl [][]byte) error {
-	ci.RegistrationNumber = string(bytes.Trim(fl[0], `"`))
-	ci.Number = string(bytes.Trim(fl[1], `"`))
-	tn, err := strconv.Atoi(string(fl[2]))
+	ci.RegistrationNumber = string(bytes.Trim(fl[1], `"`))
+	ci.Number = string(bytes.Trim(fl[2], `"`))
+	tn, err := strconv.Atoi(string(fl[3]))
 	if err != nil {
 		return err
 	}
 	ci.TransponderNumber = tn
-	ci.FirstName = string(bytes.Trim(fl[3], `"`))
-	ci.LastName = string(bytes.Trim(fl[4], `"`))
-	ci.Nationality = string(bytes.Trim(fl[5], `"`))
-	tn, err = strconv.Atoi(string(fl[2]))
+	ci.FirstName = string(bytes.Trim(fl[4], `"`))
+	ci.LastName = string(bytes.Trim(fl[5], `"`))
+	ci.Nationality = string(bytes.Trim(fl[6], `"`))
+	tn, err = strconv.Atoi(string(fl[7]))
 	if err != nil {
 		return err
 	}
@@ -89,23 +94,23 @@ type Heartbeat struct {
 
 // function for the rm parse for the hearbeat message
 func (hb *Heartbeat) RmParse(formatedLine [][]byte) error {
-	laps, err := strconv.Atoi(string(formatedLine[0]))
+	laps, err := strconv.Atoi(string(formatedLine[1]))
 	if err != nil {
 		return err
 	}
-	ttg, err := parseDuration(formatedLine[1])
+	ttg, err := parseDuration(formatedLine[2])
 	if err != nil {
 		return err
 	}
-	tod, err := parseTimeWithCurrentDate(formatedLine[2])
+	tod, err := parseTimeWithCurrentDate(formatedLine[3])
 	if err != nil {
 		return err
 	}
-	rt, err := parseDuration(formatedLine[3])
+	rt, err := parseDuration(formatedLine[4])
 	if err != nil {
 		return err
 	}
-	fs := bytes.Trim(formatedLine[4], `"`)
+	fs := bytes.Trim(formatedLine[5], `"`)
 	hb.LapsToGo = laps
 	hb.TimeToGo = ttg
 	hb.TimeOfDay = tod
@@ -121,13 +126,13 @@ type InitRecord struct {
 }
 
 // method for  Rm Format
-func (ir *InitRecord) RmFormat(ln [][]byte) error {
-	tm, err := parseTimeWithCurrentDate(ln[0])
+func (ir *InitRecord) RmParse(ln [][]byte) error {
+	tm, err := parseTimeWithCurrentDate(ln[1])
 	if err != nil {
 		return err
 	}
 	ir.TimeOfDay = tm
-	tm, err = parseTimeWithCurrentDate(ln[1])
+	tm, err = parseTimeWithCurrentDate(ln[2])
 	if err != nil {
 		return err
 	}
@@ -144,13 +149,13 @@ type PassingInfo struct {
 }
 
 func (pi *PassingInfo) RmParse(ln [][]byte) error {
-	pi.RegistrationNumber = string(bytes.Trim(ln[0], `"`))
-	dur, err := parseDuration(ln[1])
+	pi.RegistrationNumber = string(bytes.Trim(ln[1], `"`))
+	dur, err := parseDuration(ln[2])
 	if err != nil {
 		return err
 	}
 	pi.LapTime = dur
-	dur, err = parseDuration(ln[2])
+	dur, err = parseDuration(ln[3])
 	if err != nil {
 		return err
 	}
@@ -169,18 +174,18 @@ type PracticeQualifyInfo struct {
 
 // method for PracticeQualifyInfo RmParse
 func (pq *PracticeQualifyInfo) RmParse(ln [][]byte) error {
-	i, err := strconv.Atoi(string(ln[0]))
+	i, err := strconv.Atoi(string(ln[1]))
 	if err != nil {
 		return err
 	}
 	pq.Position = i
-	pq.RegistrationNumber = string(bytes.Trim(ln[1], `"`))
-	i, err = strconv.Atoi(string(ln[2]))
+	pq.RegistrationNumber = string(bytes.Trim(ln[2], `"`))
+	i, err = strconv.Atoi(string(ln[3]))
 	if err != nil {
 		return err
 	}
 	pq.BestLap = i
-	pq.BestLaptime = string(bytes.Trim(ln[3], `"`))
+	pq.BestLaptime = string(bytes.Trim(ln[4], `"`))
 	return nil
 
 }
@@ -195,18 +200,18 @@ type RaceInfo struct {
 
 // method for RaceInfo to parse the timing Message
 func (ri *RaceInfo) RmParse(ln [][]byte) error {
-	i, err := strconv.Atoi(string(ln[0]))
+	i, err := strconv.Atoi(string(ln[1]))
 	if err != nil {
 		return err
 	}
 	ri.Position = i
-	ri.RegistrationNumber = string(bytes.Trim(ln[1], `"`))
-	i, err = strconv.Atoi(string(ln[2]))
+	ri.RegistrationNumber = string(bytes.Trim(ln[2], `"`))
+	i, err = strconv.Atoi(string(ln[3]))
 	if err != nil {
 		return err
 	}
 	ri.Laps = i
-	dur, err := parseDuration(ln[3])
+	dur, err := parseDuration(ln[4])
 	if err != nil {
 		return err
 	}
@@ -223,12 +228,12 @@ type RunInfo struct {
 
 // method for RunInfo RmParse
 func (ri *RunInfo) RmParse(ln [][]byte) error {
-	i, err := strconv.Atoi(string(ln[0]))
+	i, err := strconv.Atoi(string(ln[1]))
 	if err != nil {
 		return err
 	}
 	ri.UniqueNumber = i
-	ri.Description = string(bytes.Trim(ln[1], `"`))
+	ri.Description = string(bytes.Trim(ln[2], `"`))
 	return nil
 }
 
