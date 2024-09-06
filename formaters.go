@@ -63,14 +63,27 @@ func parseTimeWithCurrentDate(hhmmss []byte) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("invalid time format, expected HH:mm or HH:mm:ss but got '%s'", string(hhmmss))
 	}
 
-	// If seconds part is missing, add "00"
-	if len(timeParts) == 2 {
-		hhmmss = []byte(string(hhmmss) + ":00")
-	} else if len(timeParts[2]) == 1 { // If the seconds part is a single digit, pad it with a leading zero
-		hhmmss = []byte(fmt.Sprintf("%s:%s:%02s", timeParts[0], timeParts[1], timeParts[2]))
+	// Ensure hours, minutes, and seconds are always two digits
+	if len(timeParts[0]) == 1 {
+		timeParts[0] = "0" + timeParts[0] // Pad single digit hour
+	}
+	if len(timeParts[1]) == 1 {
+		timeParts[1] = "0" + timeParts[1] // Pad single digit minute
 	}
 
+	if len(timeParts) == 2 {
+		// If seconds part is missing, add "00"
+		hhmmss = []byte(fmt.Sprintf("%s:%s:00", timeParts[0], timeParts[1]))
+	} else if len(timeParts[2]) == 1 {
+		// If the seconds part is a single digit, pad it with a leading zero
+		hhmmss = []byte(fmt.Sprintf("%s:%s:%02s", timeParts[0], timeParts[1], timeParts[2]))
+	} else {
+		hhmmss = []byte(fmt.Sprintf("%s:%s:%s", timeParts[0], timeParts[1], timeParts[2]))
+	}
+
+	// Get the current date in the format "YYYY-MM-DD"
 	currentDate := time.Now().Format("2006-01-02")
+
 	// Combine the current date with the provided time
 	fullTimeStr := currentDate + " " + string(hhmmss)
 
