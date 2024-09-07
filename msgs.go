@@ -2,6 +2,7 @@ package rmparse
 
 import (
 	"bytes"
+	"log"
 	"strconv"
 	"time"
 )
@@ -85,11 +86,11 @@ func (ci *CompetitorInfo) RmParse(fl [][]byte) error {
 }
 
 type Heartbeat struct {
-	LapsToGo   int           `json:"lapsToGo"`
-	TimeToGo   time.Duration `json:"timeToGo"` // Custom type to handle duration
-	TimeOfDay  time.Time     `json:"timeOfDay"`
-	RaceTime   time.Duration `json:"raceTime"` // Custom type to handle duration
-	FlagStatus string        `json:"flagStatus"`
+	LapsToGo   int       `json:"lapsToGo"`
+	TimeToGo   string    `json:"timeToGo"` // Custom type to handle duration
+	TimeOfDay  time.Time `json:"timeOfDay"`
+	RaceTime   string    `json:"raceTime"` // Custom type to handle duration
+	FlagStatus string    `json:"flagStatus"`
 }
 
 // function for the rm parse for the hearbeat message
@@ -112,9 +113,9 @@ func (hb *Heartbeat) RmParse(formatedLine [][]byte) error {
 	}
 	fs := bytes.Trim(formatedLine[5], `"`)
 	hb.LapsToGo = laps
-	hb.TimeToGo = ttg
+	hb.TimeToGo = ttg.String()
 	hb.TimeOfDay = tod
-	hb.RaceTime = rt
+	hb.RaceTime = rt.String()
 	hb.FlagStatus = string(fs)
 	return nil
 }
@@ -129,7 +130,8 @@ type InitRecord struct {
 func (ir *InitRecord) RmParse(ln [][]byte) error {
 	tm, err := parseTimeWithCurrentDate(ln[1])
 	if err != nil {
-		return err
+		tm = time.Time{}
+		log.Printf("Sending default init recore for err %s", err)
 	}
 	ir.TimeOfDay = tm
 	ir.Date = string(bytes.Trim(ln[2], `"`))
@@ -139,9 +141,9 @@ func (ir *InitRecord) RmParse(ln [][]byte) error {
 
 // struct for the passing Info
 type PassingInfo struct {
-	RegistrationNumber string        `json:"registrationNumber"`
-	LapTime            time.Duration `json:"lapTime"`   // Custom type to handle duration
-	TotalTime          time.Duration `json:"totalTime"` // Custom type to handle duration
+	RegistrationNumber string `json:"registrationNumber"`
+	LapTime            string `json:"lapTime"`   // Custom type to handle duration
+	TotalTime          string `json:"totalTime"` // Custom type to handle duration
 }
 
 func (pi *PassingInfo) RmParse(ln [][]byte) error {
@@ -150,12 +152,12 @@ func (pi *PassingInfo) RmParse(ln [][]byte) error {
 	if err != nil {
 		return err
 	}
-	pi.LapTime = dur
+	pi.LapTime = dur.String()
 	dur, err = parseDuration(ln[3])
 	if err != nil {
 		return err
 	}
-	pi.TotalTime = dur
+	pi.TotalTime = dur.String()
 	return nil
 
 }
@@ -181,17 +183,21 @@ func (pq *PracticeQualifyInfo) RmParse(ln [][]byte) error {
 		return err
 	}
 	pq.BestLap = i
-	pq.BestLaptime = string(bytes.Trim(ln[4], `"`))
+	blt, err := parseDuration(ln[4])
+	if err != nil {
+		return err
+	}
+	pq.BestLaptime = blt.String()
 	return nil
 
 }
 
 // struct for the raceInfo
 type RaceInfo struct {
-	Position           int           `json:"position"`
-	RegistrationNumber string        `json:"registrationNumber"`
-	Laps               int           `json:"laps"`
-	TotalTime          time.Duration `json:"totalTime"` // Custom type to handle duration
+	Position           int    `json:"position"`
+	RegistrationNumber string `json:"registrationNumber"`
+	Laps               int    `json:"laps"`
+	TotalTime          string `json:"totalTime"` // Custom type to handle duration
 }
 
 // method for RaceInfo to parse the timing Message
@@ -211,7 +217,7 @@ func (ri *RaceInfo) RmParse(ln [][]byte) error {
 	if err != nil {
 		return err
 	}
-	ri.TotalTime = dur
+	ri.TotalTime = dur.String()
 	return nil
 
 }
