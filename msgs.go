@@ -122,7 +122,7 @@ func (hb *Heartbeat) RmParse(formatedLine [][]byte) error {
 // struct for InitRecord
 type InitRecord struct {
 	TimeOfDay time.Time `json:"timeOfDay"`
-	Date      time.Time `json:"date"`
+	Date      string    `json:"date"`
 }
 
 // method for  Rm Format
@@ -132,11 +132,7 @@ func (ir *InitRecord) RmParse(ln [][]byte) error {
 		return err
 	}
 	ir.TimeOfDay = tm
-	tm, err = parseTimeWithCurrentDate(ln[2])
-	if err != nil {
-		return err
-	}
-	ir.Date = tm
+	ir.Date = string(bytes.Trim(ln[2], `"`))
 	return nil
 
 }
